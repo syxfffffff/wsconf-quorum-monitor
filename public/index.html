@@ -3,84 +3,76 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WSConf Quorum Monitor</title>
+<meta name="viewport"
+      content="width=device-width, initial-scale=1">
+<title>Quorum Status</title>
 
 <style>
+  * {
+    box-sizing: border-box;
+  }
+
   body {
     margin: 0;
-    padding: 16px;
-    background: #f7f8fa;
+    padding: 0;
+    background: #ffffff;
     font-family: Arial, sans-serif;
-    color: #222;
+    color: #222222;
   }
 
   .card {
-    background: white;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 24px;
-    text-align: center;
+    width: 100%;
+    min-height: 145px;
+    background: #ffffff;
+    padding: 16px 18px;
   }
 
-  h3 {
-    margin: 0 0 18px;
-    font-size: 17px;
-  }
-
-  #result {
-    font-size: 54px;
-    font-weight: bold;
-    margin: 12px 0;
-  }
-
-  .yes { color: #16a34a; }
-  .no { color: #dc2626; }
-
-  .progress {
-    height: 10px;
-    background: #e5e7eb;
-    border-radius: 10px;
-    overflow: hidden;
-    margin-top: 20px;
-  }
-
-  #bar {
-    height: 100%;
-    width: 0;
-    background: #64748b;
-    transition: width 0.5s;
-  }
-
-  #count {
-    margin-top: 14px;
+  .title {
     font-size: 14px;
-    color: #555;
+    font-weight: 600;
+    text-align: left;
+    margin: 0;
   }
 
-  #updated {
+  .result {
+    text-align: center;
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.2;
     margin-top: 12px;
-    font-size: 11px;
-    color: #888;
+  }
+
+  .yes {
+    color: #16a34a;
+  }
+
+  .no {
+    color: #dc2626;
+  }
+
+  .count {
+    text-align: center;
+    font-size: 13px;
+    color: #777777;
+    margin-top: 4px;
   }
 </style>
 </head>
 
 <body>
   <div class="card">
-    <h3>Has quorum been met?</h3>
-    <div id="result">LOADING</div>
-
-    <div class="progress">
-      <div id="bar"></div>
+    <div class="title">Has quorum been met?</div>
+    <div id="result" class="result">—</div>
+    <div id="count" class="count">
+      Checking votes...
     </div>
-
-    <div id="count">Checking votes...</div>
-    <div id="updated"></div>
   </div>
 
 <script>
 async function updateQuorum() {
+  const result = document.getElementById("result");
+  const count = document.getElementById("count");
+
   try {
     const response = await fetch(
       "quorum.json?t=" + Date.now(),
@@ -88,38 +80,25 @@ async function updateQuorum() {
     );
 
     if (!response.ok) {
-      throw new Error("Data unavailable");
+      throw new Error("Unable to retrieve data");
     }
 
     const data = await response.json();
 
-    const result = document.getElementById("result");
     result.textContent = data.quorum_met ? "YES" : "NO";
-    result.className = data.quorum_met ? "yes" : "no";
+    result.className =
+      "result " + (data.quorum_met ? "yes" : "no");
 
-    document.getElementById("count").textContent =
-      data.votes_received + " of " +
-      data.quorum_required + " votes required";
-
-    const percent = Math.min(
-      100,
-      (data.votes_received / data.quorum_required) * 100
-    );
-
-    const bar = document.getElementById("bar");
-    bar.style.width = percent + "%";
-    bar.style.background =
-      data.quorum_met ? "#16a34a" : "#64748b";
-
-    document.getElementById("updated").textContent =
-      "Last updated: " +
-      new Date(data.last_updated).toLocaleString();
+    count.textContent =
+      data.votes_received +
+      " of " +
+      data.quorum_required +
+      " votes received";
 
   } catch (error) {
-    document.getElementById("result").textContent =
-      "UNAVAILABLE";
-    document.getElementById("count").textContent =
-      "Unable to retrieve voting data";
+    result.textContent = "—";
+    result.className = "result";
+    count.textContent = "Data unavailable";
   }
 }
 
