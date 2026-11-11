@@ -1,0 +1,130 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WSConf Quorum Monitor</title>
+
+<style>
+  body {
+    margin: 0;
+    padding: 16px;
+    background: #f7f8fa;
+    font-family: Arial, sans-serif;
+    color: #222;
+  }
+
+  .card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 24px;
+    text-align: center;
+  }
+
+  h3 {
+    margin: 0 0 18px;
+    font-size: 17px;
+  }
+
+  #result {
+    font-size: 54px;
+    font-weight: bold;
+    margin: 12px 0;
+  }
+
+  .yes { color: #16a34a; }
+  .no { color: #dc2626; }
+
+  .progress {
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+  }
+
+  #bar {
+    height: 100%;
+    width: 0;
+    background: #64748b;
+    transition: width 0.5s;
+  }
+
+  #count {
+    margin-top: 14px;
+    font-size: 14px;
+    color: #555;
+  }
+
+  #updated {
+    margin-top: 12px;
+    font-size: 11px;
+    color: #888;
+  }
+</style>
+</head>
+
+<body>
+  <div class="card">
+    <h3>Has quorum been met?</h3>
+    <div id="result">LOADING</div>
+
+    <div class="progress">
+      <div id="bar"></div>
+    </div>
+
+    <div id="count">Checking votes...</div>
+    <div id="updated"></div>
+  </div>
+
+<script>
+async function updateQuorum() {
+  try {
+    const response = await fetch(
+      "quorum.json?t=" + Date.now(),
+      { cache: "no-store" }
+    );
+
+    if (!response.ok) {
+      throw new Error("Data unavailable");
+    }
+
+    const data = await response.json();
+
+    const result = document.getElementById("result");
+    result.textContent = data.quorum_met ? "YES" : "NO";
+    result.className = data.quorum_met ? "yes" : "no";
+
+    document.getElementById("count").textContent =
+      data.votes_received + " of " +
+      data.quorum_required + " votes required";
+
+    const percent = Math.min(
+      100,
+      (data.votes_received / data.quorum_required) * 100
+    );
+
+    const bar = document.getElementById("bar");
+    bar.style.width = percent + "%";
+    bar.style.background =
+      data.quorum_met ? "#16a34a" : "#64748b";
+
+    document.getElementById("updated").textContent =
+      "Last updated: " +
+      new Date(data.last_updated).toLocaleString();
+
+  } catch (error) {
+    document.getElementById("result").textContent =
+      "UNAVAILABLE";
+    document.getElementById("count").textContent =
+      "Unable to retrieve voting data";
+  }
+}
+
+updateQuorum();
+setInterval(updateQuorum, 60000);
+</script>
+</body>
+</html>
